@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- This line makes the page fit an iPhone screen instead of looking tiny -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- These let it look like a real app if you add it to your iPhone home screen -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Workouts">
+<title>Workout Tracker</title>
+
+<!-- ==========================================================
+     PART 2: CSS = how the page LOOKS (colours, sizes, spacing)
+     ========================================================== -->
+<style>
+  body {
+    margin: 0;
+    padding: 16px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(32px, env(safe-area-inset-bottom));
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: #f3f5f7;
+    color: #1f2937;
+  }
+  .app { max-width: 520px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 8px 0 16px; }
+
+  /* The three Mon / Wed / Fri buttons */
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab {
+    flex: 1; padding: 12px 0; font-size: 16px; font-weight: 600;
+    border: none; border-radius: 12px;
+    background: #e3e8ec; color: #4b5563;
+  }
+  .tab.active { background: #2a9d8f; color: white; }
+
+  /* Each exercise sits in a white "card" */
+  .card {
+    background: white; border-radius: 16px; padding: 16px;
+    margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .cardTop { display: flex; justify-content: space-between; align-items: center; }
+  .cardTop h2 { font-size: 19px; margin: 0; }
+  .link { background: none; border: none; color: #9ca3af; font-size: 14px; }
+
+  .last {
+    background: #eef7f6; border-radius: 10px; padding: 10px 12px;
+    margin: 12px 0; font-size: 14px; line-height: 1.4;
+  }
+
+  .inputs { display: flex; gap: 10px; }
+  .inputs label { flex: 1; font-size: 13px; color: #6b7280; }
+  /* font-size 16px stops the iPhone zooming in when you tap a box */
+  input[type=number], input[type=text] {
+    width: 100%; box-sizing: border-box; margin-top: 4px;
+    padding: 12px; font-size: 16px;
+    border: 1px solid #d1d5db; border-radius: 10px;
+  }
+
+  /* Easy / Okay / Hard buttons. The real round radio button is hidden
+     and the label text is styled to look like a button instead. */
+  .diffRow { display: flex; gap: 8px; margin: 12px 0; }
+  .diffRow label { flex: 1; }
+  .diffRow input { display: none; }
+  .diffRow span {
+    display: block; text-align: center; padding: 10px 0;
+    border-radius: 10px; background: #eef0f2; font-size: 15px;
+  }
+  .diffRow input:checked + span { background: #2a9d8f; color: white; font-weight: 600; }
+
+  .buttons { display: flex; gap: 8px; align-items: center; }
+  .primary, .secondary {
+    padding: 12px 18px; font-size: 16px; font-weight: 600;
+    border: none; border-radius: 10px;
+  }
+  .primary { background: #2a9d8f; color: white; flex: 1; }
+  .secondary { background: #e3e8ec; color: #374151; }
+  .msg { color: #2a9d8f; font-size: 14px; }
+
+  /* Progress area */
+  .progressBox { margin-top: 14px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
+  .note { font-size: 13px; color: #6b7280; margin: 0 0 6px; }
+  .chart { width: 100%; height: auto; }
+  .chart text { font-size: 10px; fill: #6b7280; }
+  .chart polyline { fill: none; stroke: #2a9d8f; stroke-width: 2.5; }
+  .chart circle { fill: #2a9d8f; }
+  .historyList { list-style: none; padding: 0; margin: 10px 0 0; font-size: 14px; }
+  .historyList li {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid #f0f1f3;
+  }
+  .pill { padding: 2px 10px; border-radius: 20px; font-size: 12px; }
+  .pill.easy { background: #dcf3e6; color: #1b7a45; }
+  .pill.okay { background: #fdf1cf; color: #8a6700; }
+  .pill.hard { background: #fbdcdc; color: #a32626; }
+
+  /* "Add exercise" area */
+  .addRow { display: flex; gap: 8px; margin-top: 8px; }
+  .addRow input { margin-top: 0; }
+  .addRow button {
+    padding: 0 18px; font-size: 16px; font-weight: 600;
+    border: none; border-radius: 10px; background: #1f2937; color: white;
+  }
+  .empty { text-align: center; color: #6b7280; }
+
+  /* Backup area and the reminder banner */
+  .backup {
+    background: white; border-radius: 16px; padding: 16px;
+    margin-top: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .backup h3 { margin: 0 0 4px; font-size: 17px; }
+  .backup .secondary { flex: 1; }
+  .reminder {
+    background: #fdf1cf; color: #6b5200; border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 16px; font-size: 14px; line-height: 1.4;
+  }
+  .reminder button {
+    margin-top: 8px; padding: 8px 14px; font-size: 14px; font-weight: 600;
+    border: none; border-radius: 8px; background: #8a6700; color: white;
+  }
+  .footer { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 24px; }
+</style>
+</head>
+
+<!-- ==========================================================
+     PART 1: HTML = what is ON the page (the skeleton)
+     ========================================================== -->
+<body>
+<div class="app">
+  <h1>Workout Tracker</h1>
+
+  <!-- A yellow reminder that only appears when you are overdue a backup -->
+  <div class="reminder" id="reminder" hidden></div>
+
+  <!-- The three day buttons. Tapping one runs showDay(...) from the JavaScript below -->
+  <div class="tabs">
+    <button class="tab" data-day="mon" onclick="showDay('mon')">Monday</button>
+    <button class="tab" data-day="wed" onclick="showDay('wed')">Wednesday</button>
+    <button class="tab" data-day="fri" onclick="showDay('fri')">Friday</button>
+  </div>
+
+  <!-- The JavaScript fills this empty box with the exercise cards -->
+  <div id="exerciseList"></div>
+
+  <!-- Box for adding a new exercise to the chosen day -->
+  <div class="addRow">
+    <input type="text" id="newExercise" placeholder="Add an exercise...">
+    <button onclick="addExercise()">Add</button>
+  </div>
+
+  <!-- Backup area: save a copy of everything, or load one back in -->
+  <div class="backup">
+    <h3>Back up your workouts</h3>
+    <p class="note" id="backupStatus"></p>
+    <div class="buttons">
+      <button class="secondary" onclick="backUp()">Back up</button>
+      <button class="secondary" onclick="document.getElementById('restoreFile').click()">Restore</button>
+    </div>
+    <!-- Hidden file picker. The Restore button above opens it. -->
+    <input type="file" id="restoreFile" accept=".json,application/json" hidden onchange="restoreFromFile(event)">
+  </div>
+
+  <p class="footer">Your workouts are saved on this device. Back them up regularly.</p>
+</div>
+
+<!-- ==========================================================
+     PART 3: JavaScript = what the page DOES (the brain)
+     ========================================================== -->
+<script>
+  // ---- Our starting information ----
+  let currentDay = "mon";   // which day tab is open right now
+  let data = loadData();    // all your exercises and past workouts
+
+  // The shape of "data" is:
+  //   exercises: the list of exercise names for each day
+  //   history:   for each exercise name, a list of past workouts
+  //              (date, reps, weight, difficulty)
+
+  // ---- Saving and loading ----
+  // "localStorage" is a small storage space inside your web browser.
+  // It keeps your information even after you close the page.
+  function loadData() {
+    const saved = localStorage.getItem("workoutTrackerData");
+    if (saved) {
+      return JSON.parse(saved);   // turn the saved text back into our data
+    }
+    // First time ever: start with some example exercises you can change
+    return {
+      exercises: {
+        mon: ["Squat", "Bench Press", "Barbell Row"],
+        wed: ["Deadlift", "Overhead Press", "Pull-ups"],
+        fri: ["Leg Press", "Incline Dumbbell Press", "Lat Pulldown"]
+      },
+      history: {}
+    };
+  }
+
+  function saveData() {
+    // turn our data into text so the browser can store it
+    localStorage.setItem("workoutTrackerData", JSON.stringify(data));
+  }
+
+  // ---- Small helper tools ----
+
+  // Today's date written like 2026-10-16
+  function todayString() {
+    const d = new Date();
+    return d.getFullYear() + "-" +
+      String(d.getMonth() + 1).padStart(2, "0") + "-" +
+      String(d.getDate()).padStart(2, "0");
+  }
+
+  // Turns 2026-10-16 into something friendly like "16 Oct 2026"
+  function prettyDate(dateText, includeYear) {
+    const d = new Date(dateText + "T12:00:00");
+    const options = { day: "numeric", month: "short" };
+    if (includeYear !== false) { options.year = "numeric"; }
+    return d.toLocaleDateString("en-GB", options);
+  }
+
+  // Stops odd characters typed by you from breaking the page
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ---- Choosing a day ----
+  function showDay(day) {
+    currentDay = day;
+    // Colour the chosen tab, un-colour the others
+    document.querySelectorAll(".tab").forEach(function (button) {
+      button.classList.toggle("active", button.dataset.day === day);
+    });
+    renderExercises();
+  }
+
+  // ---- The "last time" message for an exercise ----
+  function lastTimeText(name) {
+    const entries = data.history[name] || [];
+    if (entries.length === 0) {
+      return "No record yet. Log your first one below!";
+    }
+    const last = entries[entries.length - 1];
+    let text = "<strong>Last time</strong> (" + prettyDate(last.date) + "): " +
+      last.reps + " reps at " + last.weight + " kg. It felt " + last.difficulty + ".";
+
+    // A simple suggestion for what to aim for
+    if (last.difficulty === "easy") {
+      text += "<br><strong>Aim:</strong> a bit more weight or reps.";
+    } else if (last.difficulty === "okay") {
+      text += "<br><strong>Aim:</strong> one more rep, or a little more weight.";
+    } else {
+      text += "<br><strong>Aim:</strong> match this again.";
+    }
+    return text;
+  }
+
+  // ---- Drawing the exercise cards on the page ----
+  function renderExercises() {
+    const list = data.exercises[currentDay];
+    let html = "";
+
+    if (list.length === 0) {
+      html = '<p class="empty">No exercises yet. Add one below.</p>';
+    }
+
+    // Build one card for each exercise. "i" is its position in the list (0, 1, 2...)
+    list.forEach(function (name, i) {
+      html += `
+        <div class="card">
+          <div class="cardTop">
+            <h2>${escapeHtml(name)}</h2>
+            <button class="link" onclick="removeExercise(${i})">Remove</button>
+          </div>
+
+          <p class="last" id="last${i}">${lastTimeText(name)}</p>
+
+          <div class="inputs">
+            <label>Reps
+              <input type="number" inputmode="numeric" id="reps${i}">
+            </label>
+            <label>Weight (kg)
+              <input type="number" inputmode="decimal" step="any" id="weight${i}">
+            </label>
+          </div>
+
+          <div class="diffRow">
+            <label><input type="radio" name="diff${i}" value="easy"><span>Easy</span></label>
+            <label><input type="radio" name="diff${i}" value="okay"><span>Okay</span></label>
+            <label><input type="radio" name="diff${i}" value="hard"><span>Hard</span></label>
+          </div>
+
+          <div class="buttons">
+            <button class="primary" onclick="saveEntry(${i})">Save</button>
+            <button class="secondary" onclick="toggleProgress(${i})">Progress</button>
+            <span class="msg" id="msg${i}"></span>
+          </div>
+
+          <div id="progress${i}"></div>
+        </div>`;
+    });
+
+    // Put all the cards into the empty box on the page
+    document.getElementById("exerciseList").innerHTML = html;
+  }
+
+  // ---- Saving a workout ----
+  function saveEntry(i) {
+    const name = data.exercises[currentDay][i];
+    const reps = document.getElementById("reps" + i).value;
+    const weight = document.getElementById("weight" + i).value;
+    const chosen = document.querySelector('input[name="diff' + i + '"]:checked');
+
+    // Make sure everything has been filled in
+    if (reps === "" || weight === "" || !chosen) {
+      alert("Please fill in reps, weight, and how it felt (easy, okay or hard).");
+      return;
+    }
+
+    const entry = {
+      date: todayString(),
+      reps: Number(reps),
+      weight: Number(weight),
+      difficulty: chosen.value
+    };
+
+    if (!data.history[name]) { data.history[name] = []; }
+    const entries = data.history[name];
+    const last = entries[entries.length - 1];
+
+    // If you already saved this exercise today, replace it (handy for fixing mistakes)
+    if (last && last.date === entry.date) {
+      entries[entries.length - 1] = entry;
+    } else {
+      entries.push(entry);
+    }
+    saveData();
+    updateBackupStatus();   // may show the backup reminder
+
+    // Update just this card: new "last time" message, clear the boxes
+    document.getElementById("last" + i).innerHTML = lastTimeText(name);
+    document.getElementById("reps" + i).value = "";
+    document.getElementById("weight" + i).value = "";
+    chosen.checked = false;
+    document.getElementById("msg" + i).textContent = "Saved ✓";
+
+    // If the progress area is open, refresh it too
+    const box = document.getElementById("progress" + i);
+    if (box.innerHTML !== "") { box.innerHTML = buildProgress(name); }
+  }
+
+  // ---- Showing / hiding the progress area ----
+  function toggleProgress(i) {
+    const name = data.exercises[currentDay][i];
+    const box = document.getElementById("progress" + i);
+    if (box.innerHTML === "") {
+      box.innerHTML = buildProgress(name);   // open it
+    } else {
+      box.innerHTML = "";                    // close it
+    }
+  }
+
+  // Builds the line graph and the list of past workouts
+  function buildProgress(name) {
+    const entries = data.history[name] || [];
+    if (entries.length === 0) {
+      return '<div class="progressBox"><p class="note">No history yet. Save a workout first.</p></div>';
+    }
+
+    // Graph measurements (all in "drawing units", it scales to fit the screen)
+    const width = 300, height = 140;
+    const left = 34, right = 12, top = 12, bottom = 28;
+    const plotHeight = height - top - bottom;
+
+    // Find the heaviest and lightest weights so the graph fits them
+    const weights = entries.map(function (e) { return e.weight; });
+    const max = Math.max.apply(null, weights);
+    const min = Math.min.apply(null, weights);
+    const range = max - min;
+
+    // Work out where each dot goes on the graph
+    let points = [];
+    let dots = "";
+    entries.forEach(function (e, k) {
+      const x = entries.length === 1 ? width / 2
+        : left + k * (width - left - right) / (entries.length - 1);
+      const y = range === 0 ? top + plotHeight / 2
+        : top + (max - e.weight) / range * plotHeight;
+      points.push(x + "," + y);
+      dots += '<circle cx="' + x + '" cy="' + y + '" r="4"></circle>';
+    });
+
+    const firstDate = prettyDate(entries[0].date, false);
+    const lastDate = prettyDate(entries[entries.length - 1].date, false);
+
+    const chart =
+      '<svg class="chart" viewBox="0 0 ' + width + ' ' + height + '">' +
+      '<text x="2" y="' + (top + 4) + '">' + max + '</text>' +
+      '<text x="2" y="' + (top + plotHeight + 4) + '">' + min + '</text>' +
+      '<polyline points="' + points.join(" ") + '"></polyline>' + dots +
+      '<text x="' + left + '" y="' + (height - 6) + '">' + firstDate + '</text>' +
+      '<text x="' + (width - right) + '" y="' + (height - 6) + '" text-anchor="end">' + lastDate + '</text>' +
+      '</svg>';
+
+    // The list of past workouts, newest first
+    let rows = "";
+    for (let k = entries.length - 1; k >= 0; k--) {
+      const e = entries[k];
+      rows += "<li><span>" + prettyDate(e.date) + "</span>" +
+        "<span>" + e.reps + " reps × " + e.weight + " kg</span>" +
+        '<span class="pill ' + e.difficulty + '">' + e.difficulty + "</span></li>";
+    }
+
+    return '<div class="progressBox"><p class="note">Weight over time (kg)</p>' +
+      chart + '<ul class="historyList">' + rows + "</ul></div>";
+  }
+
+  // ---- Adding and removing exercises ----
+  function addExercise() {
+    const box = document.getElementById("newExercise");
+    const name = box.value.trim();
+    if (name === "") { return; }
+    data.exercises[currentDay].push(name);
+    saveData();
+    box.value = "";
+    renderExercises();
+  }
+
+  function removeExercise(i) {
+    const name = data.exercises[currentDay][i];
+    if (confirm('Remove "' + name + '" from this day? Your past records for it are kept.')) {
+      data.exercises[currentDay].splice(i, 1);
+      saveData();
+      renderExercises();
+    }
+  }
+
+  // ---- Backing up and restoring ----
+  // A backup is a small file containing all your exercises and workouts.
+  // Keep it somewhere safe (iCloud Drive, email it to yourself...) and you
+  // can load it back in if your saved data is ever wiped.
+
+  // Remember the date of the last backup
+  function markBackedUp() {
+    localStorage.setItem("workoutTrackerLastBackup", todayString());
+    updateBackupStatus();
+  }
+
+  // How many days ago was the last backup? (null = never)
+  function daysSinceBackup() {
+    const last = localStorage.getItem("workoutTrackerLastBackup");
+    if (!last) { return null; }
+    const then = new Date(last + "T12:00:00");
+    const now = new Date(todayString() + "T12:00:00");
+    return Math.round((now - then) / 86400000);   // 86,400,000 = milliseconds in a day
+  }
+
+  // Update the text under "Back up your workouts" and the yellow reminder
+  function updateBackupStatus() {
+    const days = daysSinceBackup();
+    const status = document.getElementById("backupStatus");
+    const reminder = document.getElementById("reminder");
+
+    if (days === null) {
+      status.textContent = "You haven't backed up yet.";
+    } else if (days === 0) {
+      status.textContent = "Last backup: today.";
+    } else {
+      status.textContent = "Last backup: " + days + (days === 1 ? " day ago." : " days ago.");
+    }
+
+    // Only nag if there are workouts saved and the last backup is a week old (or never)
+    const hasWorkouts = Object.keys(data.history).length > 0;
+    const overdue = days === null || days >= 7;
+    if (hasWorkouts && overdue) {
+      reminder.innerHTML = (days === null
+        ? "You haven't backed up your workouts yet."
+        : "It's been " + days + " days since your last backup.") +
+        "<br><button onclick='backUp()'>Back up now</button>";
+      reminder.hidden = false;
+    } else {
+      reminder.hidden = true;
+    }
+  }
+
+  // Create the backup file
+  async function backUp() {
+    const text = JSON.stringify(data, null, 2);
+    const fileName = "workout-backup-" + todayString() + ".json";
+    const file = new File([text], fileName, { type: "application/json" });
+
+    // On an iPhone this opens the "share" menu: choose "Save to Files"
+    // (iCloud Drive), or email/message it to yourself.
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        markBackedUp();
+        return;
+      } catch (error) {
+        if (error.name === "AbortError") { return; }   // you closed the menu: do nothing
+        // any other problem: carry on and download the file instead
+      }
+    }
+
+    // On a computer: download the file normally
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(file);
+    link.download = fileName;
+    link.click();
+    markBackedUp();
+  }
+
+  // Load a backup file back into the app
+  function restoreFromFile(event) {
+    const file = event.target.files[0];
+    if (!file) { return; }
+
+    const reader = new FileReader();
+    reader.onload = function () {
+      try {
+        const restored = JSON.parse(reader.result);
+        // Check it really looks like one of our backup files
+        const looksRight = restored && restored.exercises && restored.history &&
+          Array.isArray(restored.exercises.mon) &&
+          Array.isArray(restored.exercises.wed) &&
+          Array.isArray(restored.exercises.fri);
+        if (!looksRight) { throw new Error("Not a workout backup"); }
+
+        if (confirm("This replaces everything currently in the app with the backup. Continue?")) {
+          data = restored;
+          saveData();
+          showDay(currentDay);
+          updateBackupStatus();
+          alert("Backup restored!");
+        }
+      } catch (error) {
+        alert("Sorry, that doesn't look like a workout backup file.");
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = "";   // lets you pick the same file again later
+  }
+
+  // ---- Start up: open today's workout if it's Mon/Wed/Fri, otherwise Monday ----
+  const dayNumber = new Date().getDay();   // Sunday = 0, Monday = 1 ... Saturday = 6
+  if (dayNumber === 3) { showDay("wed"); }
+  else if (dayNumber === 5) { showDay("fri"); }
+  else { showDay("mon"); }
+  updateBackupStatus();
+</script>
+</body>
+</html>
